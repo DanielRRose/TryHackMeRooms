@@ -1,0 +1,121 @@
+TryHackMe: Log Analysis with SIEM
+
+This write-up documents the steps and answers for the Log Analysis with SIEM room.
+
+Task 1: Introduction
+  Before proceeding, start the lab by clicking the Start Lab Machine.
+
+Task 2: Benefits of SIEM for Analysts
+  
+    q1. What is the process of linking data from multiple sources to identify relationships between individual events called?
+        Explanation: The ability to link separate events and piece them together is known as correlation, like pieces of a puzzle to form a complete picture.
+    a1. Correlation
+
+    q2. What is the process of collecting and storing log data from multiple systems and sources into a single, unified location for easier analysis called?
+        Explanation: The act of consolidating information under a central control is known as centralization, a SIEM allows you to gather all that data in one place.
+    a2. Centralisation
+
+Task 3: Log Sources Overview
+  
+    q3. What is the process of converting logs from different formats into a single format for easier analysis in a SIEM?
+        Explanation: Logs come in differnt formats, normalisation is the process of organizing data to conform to a standard.
+    a3. Normalisation
+
+    q4. Which log source type can be used to detect the execution of a malicious script?
+        Explanation: Host-based logs provide the granular, low-level visibility into what ran, how it was launched.
+    a4. Host-Based
+
+Task 4: Windows Logs
+  Provided Context: You are an SOC Level 1 Analyst on shift and have received an alert indicating a suspicious network connection using port 5678 on the WIN-105 host. Your task is to conduct an investigation and determine whether this activity is suspicious. The logs for this task are located in the Splunk index task4. Use the following query: index=task4
+
+    q5. Which IP address was the connection established with?
+        Method: Use Splunk lab to search for ip addresses using port 5678.
+        * Splunk query: "index=task4 DestinationPort=5678 | table _time SourceIp DestinationIp DestinationPort Protocol".
+        * The results will list one entry with a destination Ip of 10.10.114.80 and a destionation port of 5678.
+    a5. 10.10.114.80
+
+    q6. Which process initiated this suspicious connection?
+        Method: Use Splunk lab search from previous question, adding Image to the table.
+        * Splunk query: "index=task4 DestinationPort=5678 | table _time Image SourceIp DestinationIp DestinationPort Protocol"
+        * The results will contain one entry with C:\Windows\Temp\SharePoInt.exe listed in the Image field.
+    a6. SharePoInt.exe
+
+    q7. What is the MD5 hash of the malicious process from the previous question?
+        Method: Use Splunk lab to search for the image SharePoInt.exe.
+        * Splunk query: "index=task4 Image=*SharePoInt.exe* | table _time EventCode ComputerName ParentImage ParentProcessId Image Hashes"
+        * This will return four results we are interested in the one with EventCode 1 "process creation" that will contain executable hashes.
+    a7. 770D14FFA142F09730B415506249E7D1
+
+    q8. What is the name of the scheduled task that was created on the system?
+        Method: Use Splunk lab to search for commands that contain schtasks on computer WIN-105
+        * Spunk query: "index=task4 ComputerName=WIN-105 CommandLine=*schtasks* | table UtcTime ComputerName ParentImage Image CommandLine Description".
+        * The results contain `/tn "Office365 Install` in the context of powershell `/tn` stands for task name.
+    a8. Office365 Install
+
+Task 5: Linux Logs
+  Provided Context: You are an SOC Level 1 Analyst on shift and have received an alert indicating possible persistence through the creation of a new remote-ssh user on an Ubuntu server. 
+Your task is to dive into the logs and determine exactly what happened on the system. The logs for this task are located in the Splunk index task5. Use the following query: index=task5
+
+  q9. What was the timestamp of the remote-ssh account creation? Answer Format Example: 2025-01-15 12:30:45
+      Method: Use Splunk lab to search for linux keyword that signal user creation and remote ssh connection.
+      * Splunk query: index=task5 source="auth.log" | sort + _time | search "useradd" OR "remote-shh"
+      * The results list an event that contains a command which contains both useradd and remote-ssh
+  a9. 2025-08-12 09:52:57
+
+  q10. Which user successfully escalated their privileges to root prior to the action from the first question?
+      Method: Use Splunk lab to search for linux keyword "su" to locate logs which indicate privilege escalation.
+      * Splunk query: index=task5 source="auth.log" | sort + _time | search "su"
+      * This surfaces the auth.log entries showing jack-brown running sudo su (or equivalent) to open a root session, which occurred just before the remote-ssh account was created.
+  a10. jack-brown
+
+  q11. How many failed login attempts occurred prior to this successful login?
+      Method: Use Splunk lab to search for user name and linux key-term "Accepted password" indicating a successful login
+      * Splunk query: index=task5 source="auth.log" | search "jack-brown" AND "Accepted password"
+      * This search reveals one result showing that user jack-brown logged in using ssh from an IP of 10.14.94.82 on port 54451.
+  a11. 10.14.94.82
+
+  q12. How many failed login attempts occurred prior to this successful login?
+      Method: Use Splunk lab to search for failed logins from user jack-brown prior to the successful login linux key-term "Failed password".
+      * Splunk query: index=task5 source="auth.log" | sort + _time | search "jack-brown" AND "Failed password"
+      * The results show four failed loggin attempts made before and one after the seccessful loggin from user jack-brown.
+  a11. 4
+
+  q12. Which port is the persistence mechanism configured to connect to?
+      Method: Use Splunk lab to search syslog for indicators of persistence.
+      * Splunk query: index=task5 sourcetype=syslog | search "cron" OR "CRON" OR "python*" OR "perl" OR "ruby" OR ".sh" OR "bash" OR "nc"
+      * The results reveal an event where a python3 reverse shell executed via a root cron job using port 7654 and dest IP 10.10.33.31
+  a12. 7654
+
+Task 6: Web Application Logs
+    Provided Context: You are an SOC Level 1 Analyst on shift and have received an alert indicating a spike in activity on the organisation's web server.
+Your task is to dive into the logs and determine exactly what happened. The logs for this task are located in the Splunk index task6. Use the following query: index=task6
+
+  q13. Which URI path had the highest number of requests?
+      Method: Use Splunk lab to search for the count of uri_path then sort them by highest count
+      * Splunk query: index=task6 | stats count by uri_path | sort - count
+      * This search list several uri paths but one has a count of 907 significatly higher then the rest.
+  a13. /wp-login.php
+
+  q14. Which IP address was the source of the activity?
+    Method: Use Splunk lab to search for the client ip that has the highest number of request to the uri.
+    * Splunk query: index=task6 uri_path="/wp-login.php" | stats count by clientip | sort - count
+    * The result from the search shows us that 4 client ips have made request to the uri but one has made hundreds more than the rest.
+  a14. 10.10.243.134
+
+  q15. How can this activity be classified?
+    Method: Simple analysis of the attack pattern, if unsure a quick google search using the number of requests in the time span.
+    * The rapid POST requests to /wp-login.php from a single IP within a short time window is the classic signature of a brute-force attack against
+    * We can confirm this by charting the request rate in the Splunk lab.
+    * Splunk query: index=task6 uri_path="/wp-login.php" clientip=10.10.243.134 | timechart span=5m count
+    * This shows all 586 request from a single ip where made in a a minute span.
+  a15. Brute Force
+
+  q16. Which tool did the threat actor use?
+      Method: Use Splunk lab to identify the user agent the client ip is using to make request to uri.
+      * Splunk query: index=task6 uri_path="/wp-login.php" clientip=10.10.243.134 | table _time referer_domain clientip useragent uri_path
+      * The results show the client ip used user agent WPScan v3.8.28 to make request.
+  a16. WPScan
+
+  Summary:
+    
+        

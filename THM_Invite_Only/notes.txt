@@ -1,0 +1,105 @@
+Write up for Try Hack Me Room (Invite Only)
+	
+    Start the lab machine and wait for it to open.
+
+    q1. What is the name of the file identified with the flagged SHA256 hash?
+
+        method - Using static TryDetectThis2.0 in THM lab machine.
+	    * Start TryDetectThis2.0 by clicking on the desktop icon.
+	    * Copy the provided hash (5d0509f68a9b7c415a726be75a078180e3f02e59866f193b0a99eee8e39c874f) and paste it into the TryDetectThis2.0 search bar and hit enter.
+	    * Once the TryDetectThis2.0 report has been loaded, under File we see "syshelpers.exe Win32 EXE • 214.0 KB" this gives us the answer to question 1.
+    
+    a1. syshelpers.exe 
+
+    
+    q2. What is the file type associated with the flagged SHA256 hash?
+	
+	method - Simple repeat the steps form question 1.
+	    * This time we are interested in the middle of the contents under File "syshelpers.exe Win32 EXE • 214.0 KB" this gives us the answer to question 2.
+
+    a2. Win32 EXE
+
+
+   q3. What are the execution parents of the flagged hash? List the names chronologically, using a comma as a separator. Note down the hashes for later use.
+	
+	method - With the flagged hash report pulled up on the DetectThis2.0 page.
+	    * Navigate to the Relations tab.
+	    * Then under Execution Parents section we see 2 executions listed "Powershell • 361GJX7J" and "Win32 EXE • installer.exe"
+	    * Answer format can be tricky on this one we want the last half of both the executions seperated by a comma and in chronologically order.
+	    * Note take down and save the hashes of these excutions for later.
+	    * Hash for "Powershell • 361GJX7J" = "047c5eec0445746862710d20e50a5dd04510b7e625fa5c1f5d48ce078001c0de"
+	    * Hash for "Win32 EXE • installer.exe" = "fa102d4e3cfbe85f5189da70a52c1d266925f3efd122091cdc8fe0fc39033942"
+
+    a3. 361GJX7J,installer.exe
+
+
+    q4. What is the name of the file being dropped? Note down the hash value for later use.
+
+    method - With the flagged hash report pulled up on the DetectThis2.0 page.
+	* Navigate to the Relations tab.
+	* Then scroll down to the Dropped Files section we see one file listed "unknown • AClient.exe" the .exe file is our answer.
+	* Note take down and save the hash of the dropped file for later.
+	* Hash for "unknown • AClient.exe" = "dd02c105809e4ca41a5489e585ba025eddb89a91703b73a566c9903e6406a08c"
+
+    a4. AClient.exe
+
+
+    q5. Research the second hash in question 3 and list the four malicious dropped files in the order they appear (from up to down), separated by commas.
+
+	method - Search DetectThis2.0 with the hash specified in the question description.
+	    * Navigate to the Relations tab.
+	    * Then scroll down to the Dropped Files section, here we see multiple files listed.
+	    * Scroll though the files and find only the malicious marked files.
+	    * Malicious files include - "Win32 EXE • searchHost.exe", "Win32 EXE • syshelpers.exe", "VBA • nat1.vbs", and "VBA • runsys.vbs".
+
+    a5. searchHost.exe,syshelpers.exe,nat1.vbs,runsys.vbs
+
+
+   q6. Analyse the files related to the flagged IP. What is the malware family that links these files?
+
+	method - Search DetectThis2.0 using the provided flagged IP 101[.]99[.]76[.]120 - NOTE defang the IP.
+	    * With the report of the flagged IP pulled up.
+	    * Go to the Relations tab → Communicating Files to see the associated hashes
+	    * Look up those hashes, or check the Community Comments tab — a researcher's comment references Malpedia: AsyncRAT
+
+    a6. AsyncRAT
+
+
+    q7. What is the title of the original report where these flagged indicators are mentioned? Use Google to find the report.
+	
+	method - Search the flagged IP in a live evironment virustotal.com.
+	    * Once the report of the flagged IP is pull up in virustoal, got to the Details tab.
+	    * Scroll down to the Google results section.
+	    * One of the first links listed should be a result from research.checkpoint.com with a title starting with "From Trust to Threat".
+	    * Investigating and clicking on the link revels the full title.
+	
+    a7. From Trust to Threat: Hijacked Discord Invites Used for Multi-Stage Malware Delivery
+
+
+    q8. Which tool did the attackers use to steal cookies from the Google Chrome browser?
+
+	method - Continue reading the report from the previous question on research.checkpoint.com.
+	    * Searching for the keyword "cookies" we find a section explaining that after Google introduced App-Bound Encryption (ABE) in 2024, traditional stealers became ineffective.
+	    * The report states the attackers adapted the open-source tool ChromeKatz to bypass ABE by injecting directly into the browser process memory
+
+    a8. ChromeKatz
+
+
+    q9. Which phishing technique did the attackers use? Use the report to answer the question.
+
+	method - In the research.checkpoint.com report search for the keywork "phishing".
+	    * Searching for keywork "phishing" we find a section Phishing website.
+	    * The section explains that the attackers use a refined UX trick known as "ClickFix" a technique.
+	    * This technique presents as a service which initially appears to be broken promting the user to take manual action to "fix" it.
+
+    a9. "ClickFix"
+
+
+    q10. What is the name of the platform that was used to redirect a user to malicious servers?
+
+	method - Search the research.checkpoint.com report for the keywork "server".
+	   * Locate a section called "Understanding Discord Invite Links".
+	   * This section explains how cybercriminals actively exploit Discord’s invitation system to conduct phishing attacks.
+
+
+    a10. Discord
