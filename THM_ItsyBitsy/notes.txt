@@ -1,0 +1,68 @@
+Write up for Try Hack Me Room (ItsyBitsy)
+
+    Task1: Introduction
+
+        * Start the lab machine and wait for it to open.
+        * After machine is deployed, access Elastic via the provided IP address. Then access the logs in the Discover tab.
+
+    Task2: Scenario - Investigate a potential C2 communication alert
+
+        q1. How many events were returned for the month of March 2022?
+            Method: Filter the logs by selcting the start date to the first day of march and end date to the last day of March in the date picker, then count the number of events returned.
+        a1. 1482
+
+        q2. What is the IP associated with the suspected user in the logs?
+            Method: Display relevant log fields, compare source IPs to identify outliers, and filter the suspicious IP to confirm its connection to suspicious domain.
+            * Select the relevant fields to the display, such as source_ip, source_port, destination_ip, host, method, uri, user_agent.
+            * Investigating the source_ip field we notice that almost all the events are associated with a single IP address,
+             except for a couple events which have a different source_ip this is an anomaly and we should investigate it.
+            * Apply a filter on the source_ip 192.166.65.54 field to isolate the anomalous events.
+            * Closer inspection of the anomalous events show the host field is associated with a suspicious domain pastebin[.]com a platform widely exploited by cybercriminals.
+        a2. 192.166.65.54
+
+        q3. The user’s machine used a legit windows binary to download a file from the C2 server. What is the name of the binary?
+            Method: Inspect the events associated with the suspicious IP to identify the binary used for downloading the file. Look for fields such as process_name or command_line that indicate the binary involved.
+            * Using the avaible filters the only intifiable binary is in the field user_agent and it corresponds to a legit windows binary bitsadmin.
+            * A quick search confirms that bitsadmin is a legitimate Windows binary used for managing BITS jobs, which can be exploited to download files from remote servers.
+        a3. bitsadmin
+
+        q4. The infected machine connected with a famous filesharing site in this period, which also acts as a C2 server used by the malware authors to communicate. What is the name of the filesharing site?
+            Method: Inspect the events associated with the suspicious IP to identify the suspect C2 server. Look for fields such as host or uri that indicate connections to external domains.
+            * Reviewing the host field in the anomalous events we see the pastbin[.]com domain which we indentified earlier.
+            * A quick search confirms that pastebin[.]com is a well-known filesharing site that is often abused by cybercriminals as a C2 server.
+        note: enter the defanged ip in the answer.     
+        a4. pastebin[.]com
+
+        q5. What is the full URL of the C2 to which the infected host is connected?
+            Method: Inspect the events associated with the suspicious IP to identify the full URL of the C2 server. Look for fields such as host and uri that indicate connections to external domains.
+            * Reviewing the anomalous events, we notice the host field contains pastebin[.]com and the uri field contains the specified path /yTg0Ah6a, which together form the full URL of the c2 server.
+            * Combine the host and the uri fields to form the complete path of the C2 URL.
+        note: enter the defanged full URL in the answer.
+        a5. pastebin[.]com/yTg0Ah6a
+
+        q6. A file was accessed on the filesharing site. What is the name of the file accessed?
+            Method: Navigate to the URL of the C2 server identified earlier to determine the file accessed.
+            * By visiting the URL pastebin[.]com/yTg0Ah6a, we can see the file that was accessed.
+            * The page contains a secret.txt file.
+        a6. secret.txt
+
+        q7 The file contains a secret code with the format THM{_____}.
+            method: Open the file accessed on the filesharing site to optain the secret code.
+            * We can see the file contains a single line THM{SECRET__CODE}.
+        a7. THM{SECRET__CODE}
+
+
+After thoughts and conclusions:
+    The investigation revealed that the infected machine communicated with a C2 server hosted on a well-known filesharing site, pastebin[.]com.
+    The attacker used a legitimate Windows binary, bitsadmin, to download a file from the C2 server.
+    The accessed file contained a secret code in the format THM{_____}, which was successfully retrieved.
+    This exercise highlights the importance of monitoring network traffic and analyzing anomalous events to identify potential security incidents.
+    Being able to piece together data from network traffic and key information from the events we can attempt to reconstruct the actions taken by the attacker.
+
+
+
+
+
+
+    
+

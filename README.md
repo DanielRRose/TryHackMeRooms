@@ -9,7 +9,7 @@ while others currently have notes in progress.
 | Room | Write-up or notes |
 | --- | --- |
 | [Invite Only](./THM_Invite_Only/) | [Write-up](./THM_Invite_Only/README.md) |
-| [ItsyBitsy](./THM_ItsyBitsy/) | [Notes](./THM_ItsyBitsy/notes.txt) |
+| [ItsyBitsy](./THM_ItsyBitsy/) | [Write-up](./THM_ItsyBitsy/README.md) / [Notes](./THM_ItsyBitsy/notes.txt) |
 | [Log Analysis with SIEM](./THM_Log_Analysis_with_SIEM/) | [Write-up](./THM_Log_Analysis_with_SIEM/README.md) |
 | [Shadow Trace](./THM_Shadow_Trace/) | [Write-up](./THM_Shadow_Trace/README.md) |
 
