@@ -1,0 +1,86 @@
+Write up for TryHackMe room (Benign)
+
+    Start the lab machine and wait for it to fully boot up. Then click Open machine in browser.
+
+    Context:
+        Use index "win_eventlogs".
+
+        List of known users:
+            IT Department - James, Moin, Katrina
+            HR department - Haroon, Chris, Diana
+            Marketing department - Bell, Amelia, Deepak
+
+    q1. How many logs are ingested from the month of March, 2022?
+        method - We can either use a search query to filter logs programmatically or use the built-in date range options to select logs from March, 2022.
+        * Using the programmatic option we query the index "win_eventlogs" with a filter for logs from the month of March, 2022.
+        * Splunk query: index=win_eventlogs earliest="03/01/2022:00:00:00" latest="04/01/2022:00:00:00"
+        * Now we count the number of events
+    a1. 13959
+
+    q2. Imposter Alert: There seems to be an imposter account observed in the logs, what is the name of that user?
+        method - Correlate the logs to identify any unusual or unexpected accounts.
+        * Check for for any accounts that do not match the expected naming convention or exsisting users.
+        * List the stats for HostName and UserName to identify any anomalies.
+        * Splunk query: index=win_eventlogs | stats values(HostName) as HostName by UserName
+        * From the results, we can see that there is an UserName suspiciously similar to an existing user but with slight variation, Amel1a vs known user Amelia.
+    a2. Amel1a
+
+    q3. Which user from the HR department was observed to be running scheduled tasks?
+        method - We can filter out the HR department users and check for scheduled tasks.
+        *  Filter the logs for HostName that starts with HR, and check for schtasks activity.
+        * Splunk query: index=win_eventlogs HostName=HR* schtasks | table UserName, HostName, CommandLine
+        * From the Results, we can identify that a user created a scheduled task.
+    a3. Chris.Fort
+
+    q4. Which user from the HR department executed a system process (LOLBIN) to download a payload from a file-sharing host.
+        method - filter the logs for HR department and look for binaries that can be used to download payloads.
+        * Quick google search for binaries that can be used to download payloads includes certutil, bitsadmin, powershell, and mshta.
+        * Splunk query: index=win_eventlogs HostName=HR* | search certutil OR PowerShell OR MSHTA OR Bitsadmin | table UserName, HostName, CommandLine, ProcessName
+        * From the results, we can identify that user harron executed a certutil command to download a payload.
+    a4. haroon
+
+    q5. To bypass the security controls, which system process (lolbin) was used to download a payload from the internet?
+        method - Use the method and query from the last question.
+        * We saw previously that haroon used certutil to download a payload.
+        * Therefore, the system process (lolbin) used to bypass security controls and download the payload is certutil. 
+    a5. certutil
+
+    q6. What was the date that this binary was executed by the infected host? format (YYYY-MM-DD)
+        method - Find the downloaded binary from the previous question and check that date it was executed.
+        * From the previous question, we know that the binary that was downloaded was called benign.exe.
+        * Splunk query: index=win_eventlogs | search benign.exe
+        * The result shows one event where benign.exe was executed.
+
+    a6. 2022-03-04
+
+    q7. Which third-party site was accessed to download the malicious payload?
+        method - Check the command line of the downloaded binary to identify the source URL.
+        * With the result of the previous Splunk query for benign.exe, we can check the CommandLine field to identify the source URL.
+        * The CommandLine field shows that the site controlc[.]com was accessed to download the payload.
+    note - enter the defanged URL in the answer.
+    a7. controlc[.]com
+
+    q8. What is the name of the file that was saved on the host machine from the C2 server during the post-exploitation phase?
+        method - Check the command line of the downloaded binary to identify the file that was saved on the host machine.
+        * From our previous Splunk querys we were already able to identify the file that was downloaded.
+        * Checking the CommandLine field we can confirm that a file named benign.exe was saved on the host machine.
+    a8. benign.exe
+
+    The suspicious file downloaded from the C2 server contained malicious content with the pattern THM{..........}; what is that pattern?
+        method - We need to view the file hosted on the C2 server safely.
+        * Using the full URL from the command line hxxps[://]controlc[.]com/e4d11035 pass the defanged URL into a URL analyzer like virustotal.
+        * Using our URL analyzer, we can confirm that the site is safe to visit and the contents hosted on the page can be viewed.
+        * Navigating to the defanged URL we see the flag THM{KJ&*H^B0} contained in flag.txt file.
+    a9. THM{KJ&*H^B0}
+
+    q10. What is the URL that the infected host connected to?
+        method - Using the method from the previous question.
+        * From the previous question, we know that the infected host connected to the URL hxxps[://]controlc[.]com/e4d11035.
+    note - enter the defanged URL in the answer.
+    a10. hxxps[://]controlc[.]com/e4d11035
+
+After thoughts and conclusions:
+    In this exercise, we identified the methods used by the attacker to bypass security controls using trusted system proccesses.
+    Also we were able to identify the suspicious account by comparing the name to known legitimate system accounts.
+    We also traced the malicious activity from the initial download of the payload to the C2 server and analyed the contents of the page.
+    Overall, this exercise helped us understand the attacker's techniques and the importance of monitoring command line activity and network connections for detecting malicious behavior.
